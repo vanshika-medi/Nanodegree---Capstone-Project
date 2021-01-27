@@ -5,7 +5,7 @@ This project is part of the Capstone Project for the Machine Learning Engineer U
 
 ## Architecture
 
-The flowchart provoded below shows the steps being taken:
+The flowchart provided below shows the steps being taken:
 
 ![Architecture](https://user-images.githubusercontent.com/68374253/105895430-85428c00-603b-11eb-99fe-d7ab4a85eb38.png)
 
@@ -15,6 +15,12 @@ The flowchart provoded below shows the steps being taken:
 Dataset used is the Titanic dataset which was obtained from [Kaggle](https://www.kaggle.com/c/titanic)
 The aim is to use machine learning to create a model that predicts which passengers survived the Titanic shipwreck. The columns to determine this are Gender, age, size of the family, class of the passenger, Ticket, Fare etc.
 
+### Access
+
+To get the dataset in the Azure ML Studio, I first uploaded it in the environment in the same directory as the notebook and then used to pandas to read it. The code for that is given below:
+```
+data = pd.read_csv('titanic_dataset.csv')
+```
 
 ## Automated ML
 
@@ -24,13 +30,23 @@ The traditional manner of Machine Learning involves us to do all the things by h
 Tasks done: 
 * Import all the dependencies and register the dataset.
 * We clean the data like filling null values, removing outliers etc.
-* We then initiate the AutoMLConfig class which contains parameters like experiment_timeout_minutes (time duration for the experiment to run), task (regression/classification, in this case classification), label_column_name (target), training data, validationdata, compute target and primary_metric (in this case accuracy). In our program:
-  * experiment_timeout_minutes: 30
-  * task: Classification
-  * primary_metric: Accuracy
-  * label_column_name: "Survived'
-  * compute_target
+* We then initiate the AutoMLConfig class which contains parameters like experiment_timeout_minutes (time duration for the experiment to run), task (regression/classification, in this case classification), label_column_name (target), training data, validation_data, compute target and primary_metric (in this case accuracy). In our program:
+  * **experiment_timeout_minutes**: *30 minutes*: Anything longer than this would be rejected.
+  * **task**: *Classification* :  The dataset required us to determine whether a person would survive or not hence making it a classification  program.
+  * **primary_metric**: *Accuracy* : The accuracy tells that overall how often the model is making a correct prediction. We could also use other metrics like confusion matrix or F1-score however I dound Accuracy to give me a clear sense of the model performance.
+  * **label_column_name**: *'Survived'* : The target column is the column that our model predicts. Hence in this case the target column is Survived.
+  * **training_data** : *train_data*: It is the subdataset which was achieved by using train_test_split. The model trains according to this dataset.
+  * **n-cross-validations** : *5*: To perform cross-validation, include the n_cross_validations parameter and set it to a value. This parameter sets how many cross validations to perform, based on the same number of folds. Hence metrics are calculated with the average of the five validation metrics.
+  * **compute_target** : *compute_target*: In the notebook, we define compute target as the currently working compute cluster inatance defined by us which was computecluster1.
 * Getting the best model and registering it. In this case the accuracy was 0.8127
+
+### Results
+
+* The models giving us the best accuracy are: VotingEnsemble and StackEnsemble.
+* *VotingEnsemble* : It gave us an accuracy of 0.8217.
+* *StackEnsemble* : It gave us an accuracy of 0.8034.
+* Out of the 2, since VotingEnsemble gives a better accuracy, we register it as the best model.
+* The parameters for it are: prefittedsoftvotingclassifier', min_samples_leaf=0.035789473684210524, min_samples_split=0.01, min_weight_fraction_leaf=0.0, n_estimators=10, n_jobs=1, oob_score=True, random_state=None, verbose=0, warm_start=False))],verbose=False))],flatten_transform=None, weights=[0.08333333333333333, 0.25,0.08333333333333333,  0.08333333333333333, 0.3333333333333333, 0.08333333333333333, 0.08333333333333333]))], verbose=False)
 
 * AutoML Run Details:
 
@@ -58,12 +74,15 @@ Parameters which define the model architecture are known as hyperparameters and 
 
 * **Parameter Sampler** : *BayesianParameterSampling* is being used. It defines Bayesian sampling over a hyperparameter search space.
 * **Estimator** : An estimator needs to be defined with some sample hyperparameters. The SKLearn estimator for Scikit-Learn model training requires us to input the arguments like the source directory of the file, the name of the training file as well as the compute target being used.
-* **HyperDriveConfig** : The HyperDriveConfig is where all the parameters for hyperdrive are set. It includes the above mentioned parameter sampler, early termination policy, estimator along with primary metrics being used, total_runs and max_concurrent_runs. We then submit this hyperdrive_config, retrieve the best possible model and register it.
+* **HyperDriveConfig** : The HyperDriveConfig is where all the parameters for hyperdrive are set. It incles the above mentioned parameter sampler, early termination policy, estimator along with primary metrics being used, total_runs and max_concurrent_runs. We then submit this hyperdrive_config, retrieve the best possible model and register it.
 
 * We imported dependencies and initialize an experiment.
 * We then submit the run and et the RunDetails.
-* We check the best model and compare it with the best model form the AutoML run. In this case, the accuracy of Hyperdrive is 0.834 which is more than the accuracy of the AutoML run hence we decided to deploy it.
+* We check the best model and compare it with the best model form the AutoML run. In this case, the accuracy of Hyperdrive is 0.832 dch is more than the accuracy of the AutoML run hence we decided to deploy it.
 
+### Results
+
+* The best model used Logistic Regression with an accuracy of 0.8324
 * Hyperdrive RunDetails:
 
 ![Hyperdrive_RunDetails](https://user-images.githubusercontent.com/68374253/105893206-d00ed480-6038-11eb-9485-c4f4ef113fa1.png)
