@@ -2,6 +2,20 @@
 
 This project is part of the Capstone Project for the Machine Learning Engineer Using Microsoft Azure Nanodegree Program. The dataset is the titanic dataset which was obtained from Kaggle. the aim of the project was to run an AutoML and Hyperdrive to select the best model and deploy it.
 
+## Table of Contents:
+
+* **Architecture**
+* **Dataset**
+   * **Access**
+* **AutomatesML**
+   * **Results**
+* **HyperDrive**
+   * **Results**
+* **Model Deployment**
+* **Screen Recording**
+* **Standout Suggestions**
+* **Correction after Review**
+
 
 ## Architecture
 
@@ -33,7 +47,7 @@ Tasks done:
 * We then initiate the AutoMLConfig class which contains parameters like experiment_timeout_minutes (time duration for the experiment to run), task (regression/classification, in this case classification), label_column_name (target), training data, validation_data, compute target and primary_metric (in this case accuracy). In our program:
   * **experiment_timeout_minutes**: *30 minutes*: Anything longer than this would be rejected.
   * **task**: *Classification* :  The dataset required us to determine whether a person would survive or not hence making it a classification  program.
-  * **primary_metric**: *Accuracy* : The accuracy tells that overall how often the model is making a correct prediction. We could also use other metrics like confusion matrix or F1-score however I dound Accuracy to give me a clear sense of the model performance.
+  * **primary_metric**: *Accuracy* : The accuracy tells that overall how often the model is making a correct prediction. We could also use other metrics like confusion matrix or F1-score however I found Accuracy to give me a clear sense of the model performance.
   * **label_column_name**: *'Survived'* : The target column is the column that our model predicts. Hence in this case the target column is Survived.
   * **training_data** : *train_data*: It is the subdataset which was achieved by using train_test_split. The model trains according to this dataset.
   * **n-cross-validations** : *5*: To perform cross-validation, include the n_cross_validations parameter and set it to a value. This parameter sets how many cross validations to perform, based on the same number of folds. Hence metrics are calculated with the average of the five validation metrics.
@@ -72,17 +86,21 @@ Tasks done:
 
 Parameters which define the model architecture are known as hyperparameters and hence to find the best model for our data, we have to tune them. The following parameters are the ones we used in this project:
 
-* **Parameter Sampler** : *BayesianParameterSampling* is being used. It defines Bayesian sampling over a hyperparameter search space.
-* **Estimator** : An estimator needs to be defined with some sample hyperparameters. The SKLearn estimator for Scikit-Learn model training requires us to input the arguments like the source directory of the file, the name of the training file as well as the compute target being used.
-* **HyperDriveConfig** : The HyperDriveConfig is where all the parameters for hyperdrive are set. It incles the above mentioned parameter sampler, early termination policy, estimator along with primary metrics being used, total_runs and max_concurrent_runs. We then submit this hyperdrive_config, retrieve the best possible model and register it.
-
+* **Parameter Sampler** : *BayesianParameterSampling* is being used. It defines Bayesian sampling over a hyperparameter search space.  The new sample improves the reported primary metric, i.e. Accuracy in our case. Here, the defined spaces are, -C (inversion of regularization strength): uniform (0.01, 1), ie, It returns values uniformly distributed between 0.01 and 1.00. -max-iter (maximum number of iterations): choice (100, 150, 200, 250, 300), ie, It returns a value chosen among given discrete values 100, 150, 200, 250, 300.
+* **Estimator** : An estimator needs to be defined with some sample hyperparameters. The SKLearn estimator for Scikit-Learn model training requires us to input the arguments like the source directory of the file, the name of the training file as well as the compute target being used. Logistic Regression is a supervised classification algorithm that is used to predict the probability of a categorical dependent variable (i.e., Survived). I have used scikit-learn‘s Logistic Regression module to train the model. Hyperparameters are adjustable parameters choosed for model training that guide the training process. HyperDrive package(HyperDriveConfig) helps us to choose the parameters automatically.
+* **HyperDriveConfig** : The HyperDriveConfig is where all the parameters for hyperdrive are set. It includes the above mentioned parameter sampler, early termination policy, estimator along with primary metrics being used, total_runs and max_concurrent_runs. We then submit this hyperdrive_config, retrieve the best possible model and register it. It uses:
+ * **hyperparameter_sampling** : *ps* : ps is defined as parameter sampler where we use BayesianParameterSampling.
+ * **primary_metic_name**: *accuracy* : The accuracy tells that overall how often the model is making a correct prediction. We could also use other metrics like confusion matrix or F1-score however I found Accuracy to give me a clear sense of the model performance.
+ * **max_total_runs** : *20* : The maximum total number of runs to create. This is the upper bound; there may be fewer runs when the sample space is smaller than this value.
+ * **max_concurrent_runs** : *4* : Defines the umber of runs which can run simultaneously. The number of concurrent runs is gated on the resources available in the specified compute target.
 * We imported dependencies and initialize an experiment.
-* We then submit the run and et the RunDetails.
-* We check the best model and compare it with the best model form the AutoML run. In this case, the accuracy of Hyperdrive is 0.832 dch is more than the accuracy of the AutoML run hence we decided to deploy it.
+* We then submit the run and RunDetails.
+* We check the best model and compare it with the best model form the AutoML run. In this case, the accuracy of Hyperdrive is 0.8324 which is more than the accuracy of the AutoML run hence we decided to deploy it.
 
 ### Results
 
-* The best model used Logistic Regression with an accuracy of 0.8324
+* The best model used Logistic Regression with an accuracy of 0.8324. 
+* The hyperdrive used Logistic Regression which gave better results as opposed to AutoML run which used VotingEnsemble.
 * Hyperdrive RunDetails:
 
 ![Hyperdrive_RunDetails](https://user-images.githubusercontent.com/68374253/105893206-d00ed480-6038-11eb-9485-c4f4ef113fa1.png)
@@ -110,8 +128,16 @@ Parameters which define the model architecture are known as hyperparameters and 
 
 ## Model Deployment: 
 
-*  We import conda dependencies and get 'scoring-uri' and get the logs.
-* Next isnrun endpoint.py to check if it is deployed.
+* We import conda dependencies and get 'scoring-uri' and get the logs.
+* Next is to run endpoint.py to check if it is deployed.
+* In the train.py file, we use joblib.dump to save the model and register the best model after the hyperdrive run has completed. 
+* We then create an environment that includes all the necessary conda and pip dependencies and use that and score.py file to create an InferenceConfig. 
+* The score.py file uses joblib.load to load the model, and then runs the input data through the model and returns the prediction as an output.
+* ACI offers the fastest and simplest way to run a container without having to manage any virtual machines and without having to adopt a higher-level service. Also, authentication is enabled to prevent unauthorized access so we used ACIWebservice to deploy my model, with auth_enabled=True and enable_app_insights=True. I then deployed my model to the ACI service. Once the model was deployed and the service was running, I was able to query the service using the key in the header for authorization and the scoring uri.
+* To test it, we used endpoint.py to check the result:
+```
+%run endpoint.py
+```
 
 * Deployment:
 
@@ -149,3 +175,13 @@ The screencast for the project is here: [Screencast](https://youtu.be/TL0_Kg9Vo5
 * We could convert our model to ONNX format. (There were difficulties in doing so.)
 * Enable logging in a deployed app.
 * To compare, I uploaded the predictions using traditional ML method.
+
+## Corrections after the review:
+
+* Added table of contents.
+* Added more details about the access of the dataset in the Azure Portal.
+* Added details about the Best model in AutoML and the parameters.
+* Added details about the AutoML Configurations and the reason for using the particular method.
+* Added details about the hyperparameter configuration details and choosing the particular parameters.
+* Added details about the model deployment and how to run the script.
+* Added myenv.yml environment to the repository.
